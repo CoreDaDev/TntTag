@@ -1,6 +1,4 @@
 # TntTag
-
-# ComplexCrates
 [![](https://poggit.pmmp.io/shield.state/TntTag)](https://poggit.pmmp.io/p/TntTag)
 [![](https://poggit.pmmp.io/shield.api/TntTag)](https://poggit.pmmp.io/p/TntTag)
 [![](https://poggit.pmmp.io/shield.dl.total/TntTag)](https://poggit.pmmp.io/p/TntTag)
