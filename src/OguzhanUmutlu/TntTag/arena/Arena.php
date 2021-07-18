@@ -98,7 +98,7 @@ class Arena extends Task {
                 $this->tagged->setNameTag(self::T("nametag", [$this->beforeTag]));
                 $this->tagging = 15;
                 TntTag::getInstance()->getScheduler()->scheduleRepeatingTask(new TagTask($this->tagged, $this), 15);
-                $this->tagged->getInventory()->setContents(array_map(function($a) {$tnt = Item::get(Item::TNT);$tnt->setNamedTagEntry(new ListTag(Item::TAG_ENCH, [], NBT::TAG_Compound));return $tnt;}, $player->getInventory()->getContents(true)));
+                $this->tagged->getInventory()->setContents(array_map(function($a) {$tnt = Item::get(Item::TNT);$tnt->setNamedTagEntry(new ListTag(Item::TAG_ENCH, [], NBT::TAG_Compound));return $tnt;}, $this->tagged->getInventory()->getContents(true)));
             }
         } else {
             $this->tagging--;
