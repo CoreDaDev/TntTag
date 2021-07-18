@@ -1,0 +1,18 @@
+---
+name: TntTag
+version: 1.0.0
+api: 3.0.0
+main: OguzhanUmutlu\TntTag\TntTag
+
+commands:
+  tnttag:
+    description: TNT Tag command
+  tnttagadmin:
+    description: TNT Tag admin commands
+    permission: tnttag.admin.cmd
+
+permissions:
+  tnttag.admin.cmd:
+    description: /tnttagadmin
+    default: op
+...

@@ -1,0 +1,31 @@
+---
+use-in-game: "&c> Bu komudu oyunda kullan."
+
+args-join: "katil"
+already-in-game: "&c> Zaten bir oyundasın."
+no-arena: "&c> Müsait arena bulunamadı."
+redirect: "&a> %0 adlı arenaya yönlendiriliyorsunuz..."
+
+args-leave: "ayril"
+not-in-arena: "&c> Bir arenada değilsin."
+success-left: "&a> Başarıyla arenadan ayrıldın!"
+
+usage: "&c> Kullanım: %0"
+
+game-started: "&a> Oyun başladı!"
+starts-in: "&aOyun &e%0 &a içinde başlıyor"
+tag-in: "&e%0 &csonra TNT Tag"
+explode-in: "&cTNT &e%0 &ciçinde patlayacak"
+
+won-title: "&aKazandın!"
+died-title: "&cÖldün!"
+tag-popup: "&c&lTNT TAGLANDIN! BAŞKASINI TAGLAMAK İÇİN ONA DOKUN"
+
+join-message: "&a> %0 katıldı."
+left-message: "&c> %0 ayrıldı."
+died-message: "&4> %0 öldü."
+
+leave-item: "&r&cOyundan ayrıl"
+
+nametag: "&c&lT&4N&cT TAGLANDI\n%0"
+...

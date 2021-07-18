@@ -1,0 +1,31 @@
+---
+use-in-game: "&c> Use this command in-game."
+
+args-join: "join"
+already-in-game: "&c> You are already in a game."
+no-arena: "&c> No available arena found."
+redirect: "&a> You are redirecting to %0..."
+
+args-leave: "leave"
+not-in-arena: "&c> You are not in game."
+success-left: "&a> You successfully left from game!"
+
+usage: "&c> Usage: %0"
+
+game-started: "&a> Game is started!"
+starts-in: "&aGame starts in &e%0"
+tag-in: "&cTNT tag in &e%0"
+explode-in: "&cTNT explodes in &e%0"
+
+won-title: "&aYou won!"
+died-title: "&cYou are died!"
+tag-popup: "&c&lYOU ARE TNT TAGGED! TOUCH SOMEONE TO TAG"
+
+join-message: "&a> %0 joined to game."
+left-message: "&c> %0 left from game."
+died-message: "&4> %0 died."
+
+leave-item: "&r&cLeave from game"
+
+nametag: "&c&lT&4N&cT TAGGED\n%0"
+...
