@@ -5,6 +5,7 @@ args-join: "katil"
 already-in-game: "&c> Zaten bir oyundasın."
 no-arena: "&c> Müsait arena bulunamadı."
 redirect: "&a> %0 adlı arenaya yönlendiriliyorsunuz..."
+join-popup: "&a> Oyunun başlaması için &b%0&a oyuncuya ihtiyacınız var."
 
 args-leave: "ayril"
 not-in-arena: "&c> Bir arenada değilsin."
