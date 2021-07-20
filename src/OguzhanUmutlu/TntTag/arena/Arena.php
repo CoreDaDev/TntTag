@@ -1,19 +1,19 @@
 <?php
 
-namespace OguzhanUmutlu\BlockHunt\arena;
+namespace OguzhanUmutlu\TntTag\arena;
 
 use Exception;
-use OguzhanUmutlu\BlockHunt\entities\BlockHuntEntity;
-use OguzhanUmutlu\BlockHunt\events\BlockHuntLoseEvent;
-use OguzhanUmutlu\BlockHunt\events\BlockHuntWinEvent;
-use OguzhanUmutlu\BlockHunt\BlockHunt;
-use OguzhanUmutlu\BlockHunt\utils\Utils;
-use pocketmine\block\Block;
-use pocketmine\entity\Effect;
-use pocketmine\entity\EffectInstance;
+use OguzhanUmutlu\TntTag\events\TntTagLoseEvent;
+use OguzhanUmutlu\TntTag\events\TntTagWinEvent;
+use OguzhanUmutlu\TntTag\TntTag;
+use OguzhanUmutlu\TntTag\utils\Utils;
 use pocketmine\item\Item;
 use pocketmine\level\Level;
+use pocketmine\level\particle\HugeExplodeParticle;
 use pocketmine\level\Position;
+use pocketmine\level\sound\LaunchSound;
+use pocketmine\nbt\NBT;
+use pocketmine\nbt\tag\ListTag;
 use pocketmine\Player;
 use pocketmine\scheduler\Task;
 use pocketmine\Server;
@@ -27,19 +27,13 @@ class Arena extends Task {
 
     private $private = false;
     /*** @var Player[] */
-    private $hunters = [];
-    /*** @var Player[] */
-    private $seekers = [];
+    private $players = [];
     private $status = self::STATUS_ARENA_WAITING;
     private $countdown = 0;
-    /*** @var int[] */
-    public $freeze = [];
-    /*** @var BlockHuntEntity[] */
-    public $blocks = [];
-    /*** @var int[] */
-    public $lastTransform = [];
-    /*** @var int[][] */
-    public $ids = [];
+    public $beforeTag = "";
+    /*** @var Player|null */
+    public $tagged = null;
+    private $tagging = 15;
 
     /*** @var ArenaData */
     private $data;
@@ -51,7 +45,7 @@ class Arena extends Task {
     }
 
     public function initArena(): void {
-        BlockHunt::getInstance()->getScheduler()->scheduleRepeatingTask($this, 20);
+        TntTag::getInstance()->getScheduler()->scheduleRepeatingTask($this, 20);
         $this->removeWorld();
         $this->createWorld();
     }
@@ -60,89 +54,79 @@ class Arena extends Task {
         return $this->getServer()->getLevelByName($this->data->map);
     }
 
-    public static function T($key,$args=[]): ?string {return BlockHunt::T($key,$args);}
+    public static function T($key,$args=[]): ?string {return TntTag::T($key,$args);}
 
-    /**
-     * @throws Exception
-     */
     public function start(): void {
         $this->status = self::STATUS_ARENA_RUNNING;
         $this->broadcast(self::T("game-started"));
-        foreach($this->getPlayers() as $player)
-            $player->teleport($this->data->spawn);
-        foreach($this->hunters as $player) {
-            $this->freeze[$player->getName()] = time()+15;
-            $player->addEffect(new EffectInstance(Effect::getEffect(Effect::BLINDNESS), 300, 255, false));
-        }
-        foreach($this->seekers as $player) {
-            $this->createSeekerBlock($player);
-        }
-        $this->countdown = 0;
-    }
-
-    /**
-     * @throws Exception
-     */
-    public function createSeekerBlock(Player $player, ?int $id = null, ?int $meta = null) {
-        if(!$id) $id = isset($this->ids[$player->getName()]) ? $this->ids[$player->getName()][0] : 1;
-        if(!$meta) $meta = isset($this->ids[$player->getName()]) ? $this->ids[$player->getName()][1] : 0;
-        if(($this->blocks[$player->getName()] ?? null) instanceof Block)
-            $this->getLevel()->setBlock($this->blocks[$player->getName()], Block::get(0));
-        else if(($this->blocks[$player->getName()] ?? null) instanceof BlockHuntEntity && !$this->blocks[$player->getName()]->isFlaggedForDespawn())
-            return;
-        $this->ids[$player->getName()] = [$id, $meta];
-        if(!isset(BlockHunt::getInstance()->hide[$player->getName()]))
-            BlockHunt::getInstance()->hide[$player->getName()] = [];
-        foreach($this->hunters as $p)
-            if($p instanceof Player && !$p->isClosed()) {
-                $p->hidePlayer($player);
-                BlockHunt::getInstance()->hide[$player->getName()][$p->getName()] = $p;
-            }
-        $nbt = BlockHuntEntity::createBaseNBT($player->asVector3());
-        $nbt->setInt("TileID", $id);
-        $nbt->setByte("Data", $meta);
-        $entity = BlockHuntEntity::createEntity("BlockHuntEntity", $player->level, $nbt);
-        if($entity instanceof BlockHuntEntity) {
-            $this->blocks[$player->getName()] = $entity;
-            $entity->player = $player;
-            $entity->arena = $this;
-            $entity->spawnToAll();
-            if($entity->isFlaggedForDespawn())
-                throw new Exception("Some why entity did de-spawned.");
-        } else throw new Exception(BlockHuntEntity::class . " expected, ".get_class($entity) . " provided");
+        $this->tagged = null;
+        $this->tagging = 15;
+        $this->beforeTag = "";
     }
 
     private function waitingTick(): void {
-        if(count($this->getPlayers()) >= $this->data->minPlayer) {
+        if(count($this->players) >= $this->data->minPlayer) {
             $this->status = self::STATUS_ARENA_STARTING;
             $this->countdown = $this->data->startingCountdown;
         }
     }
 
-    /**
-     * @throws Exception
-     */
     private function startingTick(): void {
-        if(count($this->getPlayers()) < $this->data->minPlayer)
+        if(count($this->players) < $this->data->minPlayer)
             $this->status = self::STATUS_ARENA_WAITING;
         else if($this->countdown <= 0) {
             $this->start();
         } else {
-            foreach($this->getPlayers() as $player)
+            foreach($this->players as $player)
                 $player->sendTitle("§r", self::T("starts-in", [$this->countdown]), 0, 20, 0);
             $this->countdown--;
         }
     }
 
     private function runningTick(): void {
-        if(count($this->seekers) <= 0 || count($this->hunters) <= 0 || $this->countdown >= $this->getData()->maxTime)
+        if(count($this->players) <= 1) {
             $this->stop();
-        $this->countdown++;
+            return;
+        }
+        if(!$this->tagged) {
+            foreach($this->players as $player)
+                $player->sendTitle("§r", self::T("tag-in", [$this->tagging]), 0, 20, 0);
+            $this->tagging--;
+            if($this->tagging <= 0 && !empty($this->players)) {
+                $this->tagged = $this->players[array_rand($this->players)];
+                $this->beforeTag = $this->tagged->getNameTag();
+                $this->tagged->setNameTag(self::T("nametag", [$this->beforeTag]));
+                $this->tagging = 15;
+                TntTag::getInstance()->getScheduler()->scheduleRepeatingTask(new TagTask($this->tagged, $this), 15);
+                $this->tagged->getInventory()->setContents(array_map(function($a) {$tnt = Item::get(Item::TNT);$tnt->setNamedTagEntry(new ListTag(Item::TAG_ENCH, [], NBT::TAG_Compound));return $tnt;}, $this->tagged->getInventory()->getContents(true)));
+            }
+        } else {
+            $this->tagging--;
+            if($this->tagging <= 0) {
+                $this->setDead($this->tagged);
+                $this->tagged->level->addParticle(new HugeExplodeParticle($this->tagged));
+                $this->tagged->level->addSound(new LaunchSound($this->tagged));
+                $this->tagged->setNameTag($this->beforeTag);
+                $this->tagged = null;
+            } else if($this->tagging <= 10) {
+                foreach($this->players as $player)
+                    $player->sendTitle("§r", self::T("explode-in", [$this->tagging]), 0, 20, 0);
+            }
+        }
     }
 
-    /*** @return int */
-    public function getCountdown(): int {
-        return $this->countdown;
+    public function setDead(Player $player): void {
+        $player->setGamemode(3);
+        $bed = Item::get(Item::BED)->setCustomName(self::T("leave-item"));
+        $bed->getNamedTag()->setString("tntTagBed", "true");
+        $player->getInventory()->setItem(8, $bed);
+        $player->sendTitle("§r", self::T("died-title"), 0, 20, 0);
+        $this->broadcast(self::T("died-message", [$player->getName()]));
+        $player->getInventory()->clearAll();
+        $player->getArmorInventory()->clearAll();
+        $player->getCursorInventory()->clearAll();
+        (new TntTagLoseEvent($player, $this))->call();
+        unset($this->players[$player->getName()]);
     }
 
     /*** @return bool */
@@ -155,44 +139,16 @@ class Arena extends Task {
         $this->private = $private;
     }
 
-    public function getWinners(): array {
-        if(empty($this->seekers))
-            return $this->hunters;
-        if(empty($this->hunters))
-            return [];
-        return $this->seekers;
-    }
-
-    public function getWinnerString(): string {
-        if(empty($this->seekers))
-            return "hunters";
-        if(empty($this->hunters))
-            return "no-one";
-        return "seekers";
-    }
-
     private function stop(bool $force = false) {
-        if(!$force) {
-            foreach($this->getWinners() as $player)
-                (new BlockHuntWinEvent($player, $this))->call();
-            foreach($this->getPlayers() as $player)
-                $player->sendTitle("§r", self::T("won-title", [self::T($this->getWinnerString())]), 0, 60, 0);
-        }
-        foreach($this->getPlayers() as $player) {
-            foreach((BlockHunt::getInstance()->hide[$player->getName()] ?? []) as $p)
-                if($p instanceof Player && !$p->isClosed()) {
-                    $p->showPlayer($player);
-                    unset(BlockHunt::getInstance()->hide[$player->getName()][$p->getName()]);
-                }
-        }
+        if(!$force)
+            foreach($this->players as $player) {
+                (new TntTagWinEvent($player, $this))->call();
+                $player->sendTitle("§r", self::T("won-title"), 0, 60, 0);
+            }
         $this->removeWorld();
         $this->createWorld();
         $this->private = false;
-        $this->hunters = [];
-        $this->seekers = [];
-        $this->blocks = [];
-        $this->freeze = [];
-        $this->lastTransform = [];
+        $this->players = [];
         $this->status = self::STATUS_ARENA_WAITING;
     }
 
@@ -211,11 +167,11 @@ class Arena extends Task {
             }
         } catch(Exception $exception) {
             $this->stop(true);
-            $fileName = BlockHunt::getInstance()->getDataFolder()."crashes/".(int)microtime(true).".txt";
-            if(!file_exists(BlockHunt::getInstance()->getDataFolder()."crashes"))
-                mkdir(BlockHunt::getInstance()->getDataFolder()."crashes");
+            $fileName = TntTag::getInstance()->getDataFolder()."crashes/".(int)microtime(true).".txt";
+            if(!file_exists(TntTag::getInstance()->getDataFolder()."crashes"))
+                mkdir(TntTag::getInstance()->getDataFolder()."crashes");
             file_put_contents($fileName,
-                "You can report this error here: https://github.com/OguzhanUmutlu/BlockHunt/issues".
+                "You can report this error here: https://github.com/OguzhanUmutlu/TntTag/issues".
                 "\nException timestamp: " . microtime(true).
                 "\nException date: " . date(DATE_ATOM).
                 "\nException message: " . $exception->getMessage().
@@ -224,8 +180,8 @@ class Arena extends Task {
                 "\nException line: " . $exception->getLine().
                 "\nException previous: " . $exception->getPrevious().
                 "\nException trace: " . $exception->getTraceAsString());
-            BlockHunt::getInstance()->getLogger()->warning($this->data->name . " arena crashed! You can report error in this file: ".$fileName);
-            BlockHunt::getInstance()->getLogger()->warning("To report bugs: https://github.com/OguzhanUmutlu/BlockHunt/issues");
+            TntTag::getInstance()->getLogger()->warning($this->data->name . " arena crashed! You can report error in this file: ".$fileName);
+            TntTag::getInstance()->getLogger()->warning("To report bugs: https://github.com/OguzhanUmutlu/TntTag/issues");
         }
     }
 
@@ -236,17 +192,7 @@ class Arena extends Task {
 
     /*** @return Player[] */
     public function getPlayers(): array {
-        return array_merge($this->hunters, $this->seekers);
-    }
-
-    /*** @return Player[] */
-    public function getHunters(): array {
-        return $this->hunters;
-    }
-
-    /*** @return Player[] */
-    public function getSeekers(): array {
-        return $this->seekers;
+        return $this->players;
     }
 
     /*** @return int */
@@ -259,15 +205,15 @@ class Arena extends Task {
     }
 
     public function getWorldDataPath(): string {
-        return BlockHunt::getInstance()->getDataFolder()."worlds/".$this->data->map.".zip";
+        return TntTag::getInstance()->getDataFolder()."worlds/".$this->data->map.".zip";
     }
 
     public function createWorld(): void {
         $this->status = self::STATUS_ARENA_SETUP;
         if(!file_exists($this->getWorldDataPath())) {
             $this->stop(true);
-            BlockHunt::getInstance()->getLogger()->warning($this->data->name . " arena crashed! Error: Saved zip not found.");
-            BlockHunt::getInstance()->getLogger()->warning("To report bugs: https://github.com/OguzhanUmutlu/BlockHunt/issues");
+            TntTag::getInstance()->getLogger()->warning($this->data->name . " arena crashed! Error: Saved zip not found.");
+            TntTag::getInstance()->getLogger()->warning("To report bugs: https://github.com/OguzhanUmutlu/TntTag/issues");
             return;
         }
         $zipArchive = new ZipArchive();
@@ -294,10 +240,8 @@ class Arena extends Task {
     }
 
     public function addPlayer(Player $player): void {
-        if(isset($this->getPlayers()[$player->getName()])) return;
-        if(count($this->seekers) < count($this->hunters))
-            $this->seekers[$player->getName()] = $player;
-        else $this->hunters[$player->getName()] = $player;
+        if(isset($this->players[$player->getName()])) return;
+        $this->players[$player->getName()] = $player;
         $player->teleport(Position::fromObject($this->data->spawn, $this->getLevel()));
         $player->getInventory()->clearAll();
         $player->getCursorInventory()->clearAll();
@@ -311,80 +255,19 @@ class Arena extends Task {
     }
 
     public function removePlayer(Player $player): void {
-        if(!isset($this->getPlayers()[$player->getName()])) return;
+        if(!isset($this->players[$player->getName()])) return;
         $player->getInventory()->clearAll();
         $player->getCursorInventory()->clearAll();
         $player->getArmorInventory()->clearAll();
-        $player->teleport($this->getServer()->getDefaultLevel()->getSpawnLocation());
-        $b = $this->blocks[$player->getName()] ?? null;
-        if($b instanceof Block)
-            $this->getLevel()->setBlock($b, Block::get(0));
-        else if($b instanceof BlockHuntEntity)
-            $b->flagForDespawn();
-        switch($this->getTeam($player)) {
-            case self::TEAM_SEEKERS:
-                unset($this->seekers[$player->getName()]);
-                foreach((BlockHunt::getInstance()->hide[$player->getName()] ?? []) as $p)
-                    if($p instanceof Player && !$p->isClosed()) {
-                        $p->showPlayer($player);
-                        unset(BlockHunt::getInstance()->hide[$player->getName()][$p->getName()]);
-                    }
-                break;
-            case self::TEAM_HUNTERS:
-                unset($this->hunters[$player->getName()]);
-                break;
-        }
+        if($this->tagged && $this->tagged->getName() == $player->getName())
+            $this->tagged = null;
+        $player->setNameTag($this->beforeTag);
+        unset($this->players[$player->getName()]);
         $this->broadcast(self::T("left-message", [$player->getName()]));
     }
 
-    public function setDead(Player $player): void {
-        $player->getInventory()->clearAll();
-        $player->getArmorInventory()->clearAll();
-        $player->getCursorInventory()->clearAll();
-        $b = $this->blocks[$player->getName()] ?? null;
-        if($b instanceof Block)
-            $this->getLevel()->setBlock($b, Block::get(0));
-        else if($b instanceof BlockHuntEntity)
-            $b->flagForDespawn();
-        switch($this->getTeam($player)) {
-            case self::TEAM_SEEKERS:
-                unset($this->seekers[$player->getName()]);
-                $this->hunters[$player->getName()] = $player;
-                foreach((BlockHunt::getInstance()->hide[$player->getName()] ?? []) as $p)
-                    if($p instanceof Player && !$p->isClosed()) {
-                        $p->showPlayer($player);
-                        unset(BlockHunt::getInstance()->hide[$player->getName()][$p->getName()]);
-                    }
-                $player->teleport($this->getData()->spawn);
-                $this->freeze[$player->getName()] = time()+15;
-                $player->addEffect(new EffectInstance(Effect::getEffect(Effect::BLINDNESS), 300, 255, false));
-                $this->broadcast(self::T("died-message-second", [$player->getName()]));
-                break;
-            case self::TEAM_HUNTERS:
-                (new BlockHuntLoseEvent($player, $this))->call();
-                $player->setGamemode(3);
-                $bed = Item::get(Item::BED)->setCustomName(self::T("leave-item"));
-                $bed->getNamedTag()->setString("blockHuntBed", "true");
-                $player->getInventory()->setItem(8, $bed);
-                $player->sendTitle("§r", self::T("died-title"), 0, 20, 0);
-                $this->broadcast(self::T("died-message", [$player->getName()]));
-                unset($this->hunters[$player->getName()]);
-                break;
-        }
-    }
-
-    public const TEAM_SEEKERS = "seekers";
-    public const TEAM_HUNTERS = "hunters";
-
-    public function getTeam(Player $player): ?string {
-        if(!isset($this->getPlayers()[$player->getName()])) return null;
-        if(isset($this->seekers[$player->getName()]))
-            return self::TEAM_SEEKERS;
-        return self::TEAM_HUNTERS;
-    }
-
     public function broadcast(string $message): void {
-        foreach($this->getPlayers() as $player)
+        foreach($this->players as $player)
             $player->sendMessage($message);
     }
 
