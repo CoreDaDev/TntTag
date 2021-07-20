@@ -47,7 +47,7 @@ class EventListener implements Listener {
                 self::$setup[$player->getName()]["name"] = $event->getMessage();
                 self::$setup[$player->getName()]["phase"] = 3;
                 $player->sendMessage("§a> Name set to §b".$event->getMessage()."§a!");
-                $player->sendMessage("§e> Type the maximum game time(seconds) of the arena to chat.");
+                $player->sendMessage("§e> Type the minimum player amount of the arena to chat.");
                 break;
             case 3:
                 if(!is_numeric($event->getMessage()) || (int)$event->getMessage() <= 0) {
