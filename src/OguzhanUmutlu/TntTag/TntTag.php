@@ -34,7 +34,7 @@ class TntTag extends PluginBase {
         $this->arenaManager = new ArenaManager();
         $this->saveDefaultConfig();
         $this->saveResource("lang/".$this->getConfig()->getNested("lang").".yml");
-        $this->messages = (new Config("lang/".$this->getConfig()->getNested("lang").".yml"))->getAll();
+        $this->messages = (new Config($this->getDataFolder()."lang/".$this->getConfig()->getNested("lang").".yml"))->getAll();
         foreach($this->arenaConfig->getAll() as $arenaData) {
             $data = new ArenaData();
             $data->minPlayer = $arenaData["minPlayer"];
