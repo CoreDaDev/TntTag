@@ -27,6 +27,8 @@ class ArenaManager {
                     "z" => $arena->getData()->spawn->z
                 ],
                 "startingCountdown" => $arena->getData()->startingCountdown,
+                "tntCountdown" => $arena->getData()->tntCountdown,
+                "tagCountdown" => $arena->getData()->tagCountdown,
                 "map" => $arena->getData()->map,
                 "name" => $arena->getData()->name,
             ];
