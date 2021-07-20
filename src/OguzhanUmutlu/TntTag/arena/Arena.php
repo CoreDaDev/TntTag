@@ -12,9 +12,9 @@ use pocketmine\level\Level;
 use pocketmine\level\particle\HugeExplodeParticle;
 use pocketmine\level\Position;
 use pocketmine\level\sound\ClickSound;
-use pocketmine\level\sound\LaunchSound;
 use pocketmine\nbt\NBT;
 use pocketmine\nbt\tag\ListTag;
+use pocketmine\network\mcpe\protocol\PlaySoundPacket;
 use pocketmine\Player;
 use pocketmine\scheduler\Task;
 use pocketmine\Server;
@@ -108,7 +108,14 @@ class Arena extends Task {
             if($this->tagging <= 0) {
                 $this->setDead($this->tagged);
                 $this->tagged->level->addParticle(new HugeExplodeParticle($this->tagged));
-                $this->tagged->level->addSound(new LaunchSound($this->tagged));
+                $pk = new PlaySoundPacket();
+                $pk->pitch = 0;
+                $pk->soundName = "";
+                $pk->volume = 100;
+                $pk->x = $this->tagged->x;
+                $pk->y = $this->tagged->y;
+                $pk->z = $this->tagged->z;
+                $this->tagged->level->broadcastPacketToViewers($this->tagged, $pk);
                 $this->tagged->setNameTag($this->beforeTag);
                 $this->tagged = null;
                 $this->tagging = $this->data->tagCountdown;
