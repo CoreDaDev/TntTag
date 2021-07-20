@@ -10,6 +10,7 @@ class ArenaData {
     /*** @var Vector3 */
     public $spawn;
     public $startingCountdown = 10;
+    public $tntCountdown = 15;
     public $tagCountdown = 15;
     public $map = "";
     public $name = "";

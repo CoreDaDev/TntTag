@@ -77,19 +77,29 @@ class EventListener implements Listener {
                 self::$setup[$player->getName()]["tagCountdown"] = (int)$event->getMessage();
                 self::$setup[$player->getName()]["phase"] = 6;
                 $player->sendMessage("§a> Tag countdown set to §b".(int)$event->getMessage()."§a!");
-                $player->sendMessage("§e> Type the starting time of the arena to chat.");
+                $player->sendMessage("§e> Type the tnt countdown of the arena to chat.");
                 break;
             case 6:
+                if(!is_numeric($event->getMessage()) || (int)$event->getMessage() <= 0) {
+                    $player->sendMessage("§c> Tnt countdown should be numeric and positive. (default = 15)");
+                    return;
+                }
+                self::$setup[$player->getName()]["tntCountdown"] = (int)$event->getMessage();
+                self::$setup[$player->getName()]["phase"] = 7;
+                $player->sendMessage("§a> Tnt countdown set to §b".(int)$event->getMessage()."§a!");
+                $player->sendMessage("§e> Type the starting time of the arena to chat.");
+                break;
+            case 7:
                 if(!is_numeric($event->getMessage()) || (int)$event->getMessage() <= 0) {
                     $player->sendMessage("§c> Starting time should be numeric and positive. (default = 10)");
                     return;
                 }
                 self::$setup[$player->getName()]["startingCountdown"] = (int)$event->getMessage();
-                self::$setup[$player->getName()]["phase"] = 7;
+                self::$setup[$player->getName()]["phase"] = 8;
                 $player->sendMessage("§a> Starting time set to §b".(int)$event->getMessage()."§a!");
                 $player->sendMessage("§e> Break the block that players will spawn on it.");
                 break;
-            case 8:
+            case 9:
                 switch($event->getMessage()) {
                     case "yes":
                         $setup = self::$setup[$player->getName()];
@@ -113,6 +123,10 @@ class EventListener implements Listener {
                             $player->sendMessage("§c> Missing tag countdown.");
                             return;
                         }
+                        if(!isset($setup["tntCountdown"])) {
+                            $player->sendMessage("§c> Missing tnt countdown.");
+                            return;
+                        }
                         if(!isset($setup["startingCountdown"])) {
                             $player->sendMessage("§c> Missing starting time.");
                             return;
@@ -126,6 +140,7 @@ class EventListener implements Listener {
                         $data->maxPlayer = $setup["maxPlayer"];
                         $data->spawn = $setup["spawn"];
                         $data->startingCountdown = $setup["startingCountdown"];
+                        $data->tntCountdown = $setup["tntCountdown"];
                         $data->tagCountdown = $setup["tagCountdown"];
                         $data->map = $setup["map"];
                         $data->name = $setup["name"];
@@ -151,10 +166,10 @@ class EventListener implements Listener {
     public function onBreakEv(BlockBreakEvent $event) {
         $player = $event->getPlayer();
         if(!isset(self::$setup[$player->getName()])) return;
-        if(self::$setup[$player->getName()]["phase"] == 7) {
+        if(self::$setup[$player->getName()]["phase"] == 8) {
             $a = $event->getBlock()->floor()->add(0, 1);
             self::$setup[$player->getName()]["spawn"] = $a;
-            self::$setup[$player->getName()]["phase"] = 8;
+            self::$setup[$player->getName()]["phase"] = 9;
             $player->sendMessage("§a> Spawn set to §bX: ".$a->x.", Y: ".$a->y.", Z: ".$a->z."§a!");
             $player->sendMessage("§e> Do you want to create arena? (yes, no)");
         }

@@ -99,7 +99,7 @@ class Arena extends Task {
                 $this->tagged = $this->players[array_rand($this->players)];
                 $this->beforeTag = $this->tagged->getNameTag();
                 $this->tagged->setNameTag(self::T("nametag", [$this->beforeTag]));
-                $this->tagging = $this->data->tagCountdown;
+                $this->tagging = $this->data->tntCountdown;
                 TntTag::getInstance()->getScheduler()->scheduleRepeatingTask(new TagTask($this->tagged, $this), 15);
                 $this->tagged->getInventory()->setContents(array_map(function($a) {$tnt = Item::get(Item::TNT);$tnt->setNamedTagEntry(new ListTag(Item::TAG_ENCH, [], NBT::TAG_Compound));return $tnt;}, $this->tagged->getInventory()->getContents(true)));
             }
@@ -111,6 +111,7 @@ class Arena extends Task {
                 $this->tagged->level->addSound(new LaunchSound($this->tagged));
                 $this->tagged->setNameTag($this->beforeTag);
                 $this->tagged = null;
+                $this->tagging = $this->data->tagCountdown;
             } else if($this->tagging <= 10) {
                 foreach($this->players as $player)
                     $player->sendTitle("§r", self::T("explode-in", [$this->tagging]), 0, 20, 0);
