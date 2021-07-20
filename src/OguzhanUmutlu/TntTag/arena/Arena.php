@@ -11,6 +11,7 @@ use pocketmine\item\Item;
 use pocketmine\level\Level;
 use pocketmine\level\particle\HugeExplodeParticle;
 use pocketmine\level\Position;
+use pocketmine\level\sound\ClickSound;
 use pocketmine\level\sound\LaunchSound;
 use pocketmine\nbt\NBT;
 use pocketmine\nbt\tag\ListTag;
@@ -77,8 +78,10 @@ class Arena extends Task {
         else if($this->countdown <= 0) {
             $this->start();
         } else {
-            foreach($this->players as $player)
+            foreach($this->players as $player) {
                 $player->sendTitle("§r", self::T("starts-in", [$this->countdown]), 0, 20, 0);
+                $player->level->addSound(new ClickSound($player), [$player]);
+            }
             $this->countdown--;
         }
     }
