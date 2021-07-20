@@ -42,6 +42,7 @@ class TntTag extends PluginBase {
             $s = $arenaData["spawn"];
             $data->spawn = new Vector3($s["x"], $s["y"], $s["z"]);
             $data->startingCountdown = $arenaData["startingCountdown"];
+            $data->tagCountdown = $arenaData["tagCountdown"];
             $data->map = $arenaData["map"];
             $data->name = $arenaData["name"];
             $this->arenaManager->createArena(new Arena($data));

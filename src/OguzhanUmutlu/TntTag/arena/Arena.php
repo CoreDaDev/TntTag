@@ -61,7 +61,7 @@ class Arena extends Task {
         $this->status = self::STATUS_ARENA_RUNNING;
         $this->broadcast(self::T("game-started"));
         $this->tagged = null;
-        $this->tagging = 15;
+        $this->tagging = $this->data->tagCountdown;
         $this->beforeTag = "";
     }
 
@@ -99,7 +99,7 @@ class Arena extends Task {
                 $this->tagged = $this->players[array_rand($this->players)];
                 $this->beforeTag = $this->tagged->getNameTag();
                 $this->tagged->setNameTag(self::T("nametag", [$this->beforeTag]));
-                $this->tagging = 15;
+                $this->tagging = $this->data->tagCountdown;
                 TntTag::getInstance()->getScheduler()->scheduleRepeatingTask(new TagTask($this->tagged, $this), 15);
                 $this->tagged->getInventory()->setContents(array_map(function($a) {$tnt = Item::get(Item::TNT);$tnt->setNamedTagEntry(new ListTag(Item::TAG_ENCH, [], NBT::TAG_Compound));return $tnt;}, $this->tagged->getInventory()->getContents(true)));
             }
