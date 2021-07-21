@@ -262,7 +262,7 @@ class Arena extends Task {
         if(count($this->getPlayers()) < $this->data->minPlayer)
             foreach($this->getPlayers() as $p)
                 if($p->getId() != $player->getId())
-                    $p->sendPopup(self::T("join-popup", [$this->data-count($this->getPlayers())]));
+                    $p->sendPopup(self::T("join-popup", [$this->data->minPlayer-count($this->getPlayers())]));
     }
 
     public function removePlayer(Player $player): void {
