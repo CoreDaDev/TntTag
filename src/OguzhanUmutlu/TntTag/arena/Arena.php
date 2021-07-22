@@ -264,6 +264,7 @@ class Arena extends Task {
     }
 
     public function addPlayer(Player $player): void {
+        var_dump($this->players);
         if(isset($this->players[$player->getName()])) return;
         $this->addPlayer($player);
         $this->players[$player->getName()] = $player;
