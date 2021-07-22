@@ -86,7 +86,6 @@ class ScoreboardManager {
                 break;
         }
         foreach ($data as $scLine => $message) {
-            var_dump("d");
             ScoreboardAPI::setScoreLine($pl, $scLine, $message);
             $line = $scLine + 1;
             if (($this->networkBound[$pl->getName()][$line] ?? -1) === $message)
