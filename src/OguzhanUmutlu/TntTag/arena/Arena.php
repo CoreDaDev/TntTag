@@ -65,6 +65,7 @@ class Arena extends Task {
         $this->broadcast(self::T("game-started"));
         $this->tagged = null;
         $this->tagging = $this->data->tagCountdown;
+        $this->scoreboard->tickScoreboard();
         $this->beforeTag = "";
     }
 
@@ -72,6 +73,7 @@ class Arena extends Task {
         if(count($this->players) >= $this->data->minPlayer) {
             $this->setStatus(self::STATUS_ARENA_STARTING);
             $this->countdown = $this->data->startingCountdown;
+            $this->scoreboard->tickScoreboard();
         }
     }
 
@@ -86,6 +88,7 @@ class Arena extends Task {
                 $player->level->addSound(new ClickSound($player), [$player]);
             }
             $this->countdown--;
+            $this->scoreboard->tickScoreboard();
         }
     }
 
@@ -98,16 +101,19 @@ class Arena extends Task {
             foreach($this->players as $player)
                 $player->sendTitle("§r", self::T("tag-in", [$this->tagging]), 0, 20, 0);
             $this->tagging--;
+            $this->scoreboard->tickScoreboard();
             if($this->tagging <= 0 && !empty($this->players)) {
                 $this->tagged = $this->players[array_rand($this->players)];
                 $this->beforeTag = $this->tagged->getNameTag();
                 $this->tagged->setNameTag(self::T("nametag", [$this->beforeTag]));
                 $this->tagging = $this->data->tntCountdown;
+                $this->scoreboard->tickScoreboard();
                 TntTag::getInstance()->getScheduler()->scheduleRepeatingTask(new TagTask($this->tagged, $this), 15);
                 $this->tagged->getInventory()->setContents(array_map(function($a) {$tnt = Item::get(Item::TNT);$tnt->setNamedTagEntry(new ListTag(Item::TAG_ENCH, [], NBT::TAG_Compound));return $tnt;}, $this->tagged->getInventory()->getContents(true)));
             }
         } else {
             $this->tagging--;
+            $this->scoreboard->tickScoreboard();
             if($this->tagging <= 0) {
                 $this->setDead($this->tagged);
                 $this->tagged->level->addParticle(new HugeExplodeParticle($this->tagged));
@@ -122,6 +128,7 @@ class Arena extends Task {
                 $this->tagged->setNameTag($this->beforeTag);
                 $this->tagged = null;
                 $this->tagging = $this->data->tagCountdown;
+                $this->scoreboard->tickScoreboard();
             } else if($this->tagging <= 10) {
                 foreach($this->players as $player)
                     $player->sendTitle("§r", self::T("explode-in", [$this->tagging]), 0, 20, 0);
