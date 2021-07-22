@@ -24,7 +24,7 @@ class Arena extends Task {
     public const STATUS_ARENA_WAITING = 0;
     public const STATUS_ARENA_STARTING = 1;
     public const STATUS_ARENA_RUNNING = 2;
-    public const STATUS_ARENA_SETUP = 3;
+    public const STATUS_ARENA_CLOSED = 3;
 
     private $private = false;
     /*** @var Player[] */
@@ -39,10 +39,13 @@ class Arena extends Task {
     /*** @var ArenaData */
     private $data;
     private $id;
+    /*** @var ScoreboardManager */
+    private $scoreboard;
 
     public function __construct(ArenaData $data) {
         $this->data = $data;
         $this->id = Utils::getUniqueNumber();
+        $this->scoreboard = new ScoreboardManager($this);
     }
 
     public function initArena(): void {
@@ -58,7 +61,7 @@ class Arena extends Task {
     public static function T($key,$args=[]): ?string {return TntTag::T($key,$args);}
 
     public function start(): void {
-        $this->status = self::STATUS_ARENA_RUNNING;
+        $this->setStatus(self::STATUS_ARENA_RUNNING);
         $this->broadcast(self::T("game-started"));
         $this->tagged = null;
         $this->tagging = $this->data->tagCountdown;
@@ -67,14 +70,14 @@ class Arena extends Task {
 
     private function waitingTick(): void {
         if(count($this->players) >= $this->data->minPlayer) {
-            $this->status = self::STATUS_ARENA_STARTING;
+            $this->setStatus(self::STATUS_ARENA_STARTING);
             $this->countdown = $this->data->startingCountdown;
         }
     }
 
     private function startingTick(): void {
         if(count($this->players) < $this->data->minPlayer)
-            $this->status = self::STATUS_ARENA_WAITING;
+            $this->setStatus(self::STATUS_ARENA_WAITING);
         else if($this->countdown <= 0) {
             $this->start();
         } else {
@@ -138,6 +141,8 @@ class Arena extends Task {
         $player->getCursorInventory()->clearAll();
         (new TntTagLoseEvent($player, $this))->call();
         unset($this->players[$player->getName()]);
+        $this->scoreboard->removePlayer($player);
+        $this->scoreboard->tickScoreboard();
     }
 
     /*** @return bool */
@@ -160,7 +165,7 @@ class Arena extends Task {
         $this->createWorld();
         $this->private = false;
         $this->players = [];
-        $this->status = self::STATUS_ARENA_WAITING;
+        $this->setStatus(self::STATUS_ARENA_WAITING);
     }
 
     public function onRun(int $currentTick) {
@@ -220,7 +225,7 @@ class Arena extends Task {
     }
 
     public function createWorld(): void {
-        $this->status = self::STATUS_ARENA_SETUP;
+        $this->setStatus(self::STATUS_ARENA_CLOSED);
         if(!file_exists($this->getWorldDataPath())) {
             $this->stop(true);
             TntTag::getInstance()->getLogger()->warning($this->data->name . " arena crashed! Error: Saved zip not found.");
@@ -232,15 +237,17 @@ class Arena extends Task {
         $zipArchive->extractTo($this->getServer()->getDataPath()."worlds");
         $zipArchive->close();
         $this->getServer()->loadLevel($this->data->map);
-        $this->status = self::STATUS_ARENA_WAITING;
+        $this->setStatus(self::STATUS_ARENA_WAITING);
     }
 
     public function removeWorld(): void {
-        $this->status = self::STATUS_ARENA_SETUP;
+        $this->setStatus(self::STATUS_ARENA_CLOSED);
         $level = $this->getLevel();
         if($level instanceof Level) {
-            foreach($level->getPlayers() as $player)
+            foreach($level->getPlayers() as $player) {
                 $player->setGamemode(0);
+                $this->scoreboard->removePlayer($player);
+            }
             $this->getServer()->unloadLevel($level);
         }
         Utils::removeDirectory($this->getWorldPath());
@@ -248,6 +255,12 @@ class Arena extends Task {
 
     public function getServer(): Server {
         return Server::getInstance();
+    }
+
+    /*** @param int $status */
+    public function setStatus(int $status): void {
+        $this->status = $status;
+        $this->scoreboard->tickScoreboard();
     }
 
     public function addPlayer(Player $player): void {
@@ -263,6 +276,7 @@ class Arena extends Task {
             foreach($this->getPlayers() as $p)
                 if($p->getId() != $player->getId())
                     $p->sendPopup(self::T("join-popup", [$this->data->minPlayer-count($this->getPlayers())]));
+        $this->scoreboard->tickScoreboard();
     }
 
     public function removePlayer(Player $player): void {
@@ -275,6 +289,8 @@ class Arena extends Task {
         $player->setNameTag($this->beforeTag);
         unset($this->players[$player->getName()]);
         $this->broadcast(self::T("left-message", [$player->getName()]));
+        $this->scoreboard->removePlayer($player);
+        $this->scoreboard->tickScoreboard();
     }
 
     public function broadcast(string $message): void {
@@ -285,5 +301,10 @@ class Arena extends Task {
     /*** @return int */
     public function getStatus(): int {
         return $this->status;
+    }
+
+    /*** @return int */
+    public function getCountdown(): int {
+        return $this->countdown;
     }
 }

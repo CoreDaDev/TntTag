@@ -22,7 +22,6 @@ class TntTag extends PluginBase {
 
     /*** @var Config */
     public $arenaConfig;
-    /*** @var string[] */
     public $messages;
     /*** @var ArenaManager */
     public $arenaManager;
