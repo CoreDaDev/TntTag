@@ -17,7 +17,7 @@ class ScoreboardManager {
     }
 
     public function addPlayer(Player $pl): void {
-        ScoreboardAPI::setScore($pl, TntTag::T("scoreboards.title"), ScoreboardAPI::SORT_ASCENDING);
+        ScoreboardAPI::setScore($pl, TntTag::getInstance()->messageConfig->getNested("scoreboards.title"), ScoreboardAPI::SORT_ASCENDING);
         $this->updateScoreboard($pl);
     }
 

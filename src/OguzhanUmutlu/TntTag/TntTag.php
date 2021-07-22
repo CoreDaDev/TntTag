@@ -23,6 +23,8 @@ class TntTag extends PluginBase {
     /*** @var Config */
     public $arenaConfig;
     public $messages;
+    /*** @var Config */
+    public $messageConfig;
     /*** @var ArenaManager */
     public $arenaManager;
 
@@ -33,7 +35,8 @@ class TntTag extends PluginBase {
         $this->arenaManager = new ArenaManager();
         $this->saveDefaultConfig();
         $this->saveResource("lang/".$this->getConfig()->getNested("lang").".yml");
-        $this->messages = (new Config($this->getDataFolder()."lang/".$this->getConfig()->getNested("lang").".yml"))->getAll();
+        $this->messageConfig = new Config($this->getDataFolder()."lang/".$this->getConfig()->getNested("lang").".yml");
+        $this->messages = $this->messageConfig->getAll();
         foreach($this->arenaConfig->getAll() as $arenaData) {
             $data = new ArenaData();
             $data->minPlayer = $arenaData["minPlayer"];
