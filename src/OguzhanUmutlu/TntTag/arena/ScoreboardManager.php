@@ -22,10 +22,12 @@ class ScoreboardManager {
     }
 
     private function updateScoreboard(Player $pl): void {
+        var_dump("a");
         if(!$pl->isOnline()) {
             $this->removePlayer($pl);
             return;
         }
+        var_dump("b");
         $keys = [
             "{name}",
             "{players}",
@@ -85,15 +87,17 @@ class ScoreboardManager {
                 $data = [" ", "An error occured!"];
                 break;
         }
+        var_dump("c");
         foreach ($data as $scLine => $message) {
+            var_dump("d");
             ScoreboardAPI::setScoreLine($pl, $scLine, $message);
             $line = $scLine + 1;
-            if (($this->networkBound[$pl->getName()][$line] ?? -1) === $message) {
+            if (($this->networkBound[$pl->getName()][$line] ?? -1) === $message)
                 continue;
-            }
             ScoreboardAPI::setScoreLine($pl, $line, $message);
             $this->networkBound[$pl->getName()][$line] = $message;
         }
+        var_dump("e");
     }
 
     public function tickScoreboard(): void {
