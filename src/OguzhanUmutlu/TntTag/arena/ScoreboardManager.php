@@ -43,7 +43,7 @@ class ScoreboardManager {
         $values = [
             $this->arena->getData()->name,
             count($this->arena->getPlayers()),
-            $this->arena->getData()-count($this->arena->getPlayers()),
+            $this->arena->getData()->minPlayer-count($this->arena->getPlayers()),
             $this->arena->getData()->minPlayer,
             $this->arena->getData()->maxPlayer,
             $this->arena->getCountdown(),
