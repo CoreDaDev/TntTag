@@ -50,36 +50,36 @@ class ScoreboardManager {
                     return str_replace(
                         $keys,
                         $values,
-                        TntTag::T("scoreboards.waiting.".$line)
+                        TntTag::sT($line)
                     );
-                }, range(0, TntTag::getInstance()->messages["scoreboards"]["waiting"])));
+                }, TntTag::getInstance()->messages["scoreboards"]["waiting"]));
                 break;
             case Arena::STATUS_ARENA_STARTING:
                 $data = array_merge([" "], array_map(function($line) use ($values, $keys) {
                     return str_replace(
                         $keys,
                         $values,
-                        TntTag::T("scoreboards.starting.".$line)
+                        TntTag::sT($line)
                     );
-                }, range(0, TntTag::getInstance()->messages["scoreboards"]["starting"])));
+                }, TntTag::getInstance()->messages["scoreboards"]["starting"]));
                 break;
             case Arena::STATUS_ARENA_RUNNING:
                 $data = array_merge([" "], array_map(function($line) use ($values, $keys) {
                     return str_replace(
                         $keys,
                         $values,
-                        TntTag::T("scoreboards.running.".$line)
+                        TntTag::sT($line)
                     );
-                }, range(0, TntTag::getInstance()->messages["scoreboards"]["running"])));
+                }, TntTag::getInstance()->messages["scoreboards"]["running"]));
                 break;
             case Arena::STATUS_ARENA_CLOSED:
                 $data = array_merge([" "], array_map(function($line) use ($values, $keys) {
                     return str_replace(
                         $keys,
                         $values,
-                        TntTag::T("scoreboards.closed.".$line)
+                        TntTag::sT($line)
                     );
-                }, range(0, TntTag::getInstance()->messages["scoreboards"]["closed"])));
+                }, TntTag::getInstance()->messages["scoreboards"]["closed"]));
                 break;
             default:
                 $data = [" ", "An error occured!"];

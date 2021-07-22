@@ -56,6 +56,10 @@ class TntTag extends PluginBase {
     }
 
     public static function T(string $key, array $args = []): ?string {
+        return self::sT(self::$instance->messages[$key] ?? "Language error: Key ".$key." not found.", $args);
+    }
+
+    public static function sT(string $message, array $args = []): string {
         return str_replace(
             [
                 "\\n",
@@ -70,7 +74,7 @@ class TntTag extends PluginBase {
             str_replace(
                 array_map(function($n){return "%".(int)$n;}, array_keys($args)),
                 array_values($args),
-                self::$instance->messages[$key] ?? "Language error: Key ".$key." not found."
+                $message
             )
         );
     }
