@@ -22,10 +22,7 @@ class ScoreboardManager {
     }
 
     private function updateScoreboard(Player $pl): void {
-        if (!isset($this->scoreboards[$pl->getName()])) {
-            $this->addPlayer($pl);
-            return;
-        } elseif (!$pl->isOnline()) {
+        if(!$pl->isOnline()) {
             $this->removePlayer($pl);
             return;
         }
