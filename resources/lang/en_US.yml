@@ -34,23 +34,20 @@ scoreboards:
   title: "§l§eTntTag"
   # {name} - Returns arena's name
   # {players} - Returns all alive players' count
-  # {seekers} - Returns seekers' count
-  # {hunters} - Returns hunters' count
   # {required_players} - Returns minimumPlayers minus(-) allPlayers
   # {min_players} - Returns minimum player amount
   # {max_players} - Returns maximum player amount
   # {countdown} - Returns countdown
-  # {endsafter} - Returns when game ends after(seconds)
+  # {tagged} - Returns tagged person's name or 'none'
   waiting:
-    - "§eWaiting {required_players} players..."
+    - "§eWaiting for {required_players} players..."
     - "§aPlayers: {players}/{max_players}"
   starting:
-    - "§eGame ends after {countdown}"
+    - "§eGame is starting in {countdown}"
     - "§aPlayers: {players}/{max_players}"
   running:
-    - "§aAlive hunters: {hunters}"
-    - "§aAlive seekers: {seekers}"
-    - "§bSeekers will win after {endsafter}!"
+    - "§aAlive players: {players}"
+    - "§bTagged player: {tagged}"
   closed:
     - "§cArena is currently closed!"
 ...
