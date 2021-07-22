@@ -52,7 +52,7 @@ class ScoreboardManager {
                         $values,
                         TntTag::T("scoreboards.waiting.".$line)
                     );
-                }, TntTag::getInstance()->messages["scoreboards"]["waiting"]));
+                }, range(0, TntTag::getInstance()->messages["scoreboards"]["waiting"])));
                 break;
             case Arena::STATUS_ARENA_STARTING:
                 $data = array_merge([" "], array_map(function($line) use ($values, $keys) {
@@ -61,7 +61,7 @@ class ScoreboardManager {
                         $values,
                         TntTag::T("scoreboards.starting.".$line)
                     );
-                }, TntTag::getInstance()->messages["scoreboards"]["starting"]));
+                }, range(0, TntTag::getInstance()->messages["scoreboards"]["starting"])));
                 break;
             case Arena::STATUS_ARENA_RUNNING:
                 $data = array_merge([" "], array_map(function($line) use ($values, $keys) {
@@ -70,7 +70,7 @@ class ScoreboardManager {
                         $values,
                         TntTag::T("scoreboards.running.".$line)
                     );
-                }, TntTag::getInstance()->messages["scoreboards"]["running"]));
+                }, range(0, TntTag::getInstance()->messages["scoreboards"]["running"])));
                 break;
             case Arena::STATUS_ARENA_CLOSED:
                 $data = array_merge([" "], array_map(function($line) use ($values, $keys) {
@@ -79,7 +79,7 @@ class ScoreboardManager {
                         $values,
                         TntTag::T("scoreboards.closed.".$line)
                     );
-                }, TntTag::getInstance()->messages["scoreboards"]["closed"]));
+                }, range(0, TntTag::getInstance()->messages["scoreboards"]["closed"])));
                 break;
             default:
                 $data = [" ", "An error occured!"];
