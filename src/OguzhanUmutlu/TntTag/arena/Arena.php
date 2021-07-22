@@ -265,6 +265,7 @@ class Arena extends Task {
 
     public function addPlayer(Player $player): void {
         if(isset($this->players[$player->getName()])) return;
+        $this->addPlayer($player);
         $this->players[$player->getName()] = $player;
         $player->teleport(Position::fromObject($this->data->spawn, $this->getLevel()));
         $player->getInventory()->clearAll();
