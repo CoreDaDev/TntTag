@@ -292,6 +292,8 @@ class Arena extends Task {
         $player->getInventory()->clearAll();
         $player->getCursorInventory()->clearAll();
         $player->getArmorInventory()->clearAll();
+        $player->removeAllEffects();
+        $player->teleport($this->getServer()->getDefaultLevel()->getSpawnLocation());
         if($this->tagged && $this->tagged->getName() == $player->getName())
             $this->tagged = null;
         $player->setNameTag($this->beforeTag);
