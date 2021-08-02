@@ -18,6 +18,7 @@ use pocketmine\network\mcpe\protocol\PlaySoundPacket;
 use pocketmine\Player;
 use pocketmine\scheduler\Task;
 use pocketmine\Server;
+use pocketmine\tile\Sign;
 use ZipArchive;
 
 class Arena extends Task {
@@ -268,6 +269,31 @@ class Arena extends Task {
     public function setStatus(int $status): void {
         $this->status = $status;
         $this->scoreboard->tickScoreboard();
+        $this->tickJoinSign();
+    }
+
+    public function tickJoinSign(): void {
+        $join = $this->data->joinSign;
+        if(!$join->level instanceof Level) return;
+        $tile = $join->level->getTile($join);
+        if(!$tile instanceof Sign) return;
+        $color = [
+            self::STATUS_ARENA_WAITING => "§7",
+            self::STATUS_ARENA_STARTING => "§a",
+            self::STATUS_ARENA_RUNNING => "§c",
+            self::STATUS_ARENA_CLOSED => "§1",
+        ][$this->status];
+        $status = [
+            self::STATUS_ARENA_WAITING => "Waiting",
+            self::STATUS_ARENA_STARTING => "Starting",
+            self::STATUS_ARENA_RUNNING => "Running",
+            self::STATUS_ARENA_CLOSED => "Ending",
+        ][$this->status];
+        if($this->status == self::STATUS_ARENA_STARTING && count($this->players) >= $this->data->maxPlayer) {
+            $color = "§6";
+            $status = "Full";
+        }
+        $tile->setText("§a[TntTag]", "§eStatus: $color$status", "§d" . $this->data->name, "$color" . count($this->players) ." / " . $this->data->maxPlayer);
     }
 
     public function addPlayer(Player $player): void {
@@ -285,6 +311,7 @@ class Arena extends Task {
                 if($p->getId() != $player->getId())
                     $p->sendPopup(self::T("join-popup", [$this->data->minPlayer-count($this->getPlayers())]));
         $this->scoreboard->tickScoreboard();
+        $this->tickJoinSign();
     }
 
     public function removePlayer(Player $player): void {
@@ -301,6 +328,7 @@ class Arena extends Task {
         $this->broadcast(self::T("left-message", [$player->getName()]));
         $this->scoreboard->removePlayer($player);
         $this->scoreboard->tickScoreboard();
+        $this->tickJoinSign();
     }
 
     public function broadcast(string $message): void {

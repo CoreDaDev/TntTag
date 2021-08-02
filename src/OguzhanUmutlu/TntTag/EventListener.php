@@ -99,7 +99,7 @@ class EventListener implements Listener {
                 $player->sendMessage("§a> Starting time set to §b".(int)$event->getMessage()."§a!");
                 $player->sendMessage("§e> Break the block that players will spawn on it.");
                 break;
-            case 9:
+            case 10:
                 switch($event->getMessage()) {
                     case "yes":
                         $setup = self::$setup[$player->getName()];
@@ -135,10 +135,15 @@ class EventListener implements Listener {
                             $player->sendMessage("§c> Missing spawn.");
                             return;
                         }
+                        if(!($setup["joinSign"] ?? null) instanceof Vector3) {
+                            $player->sendMessage("§c> Missing join sign.");
+                            return;
+                        }
                         $data = new ArenaData();
                         $data->minPlayer = $setup["minPlayer"];
                         $data->maxPlayer = $setup["maxPlayer"];
                         $data->spawn = $setup["spawn"];
+                        $data->joinSign = $setup["joinSign"];
                         $data->startingCountdown = $setup["startingCountdown"];
                         $data->tntCountdown = $setup["tntCountdown"];
                         $data->tagCountdown = $setup["tagCountdown"];
@@ -171,7 +176,15 @@ class EventListener implements Listener {
             self::$setup[$player->getName()]["spawn"] = $a;
             self::$setup[$player->getName()]["phase"] = 9;
             $player->sendMessage("§a> Spawn set to §bX: ".$a->x.", Y: ".$a->y.", Z: ".$a->z."§a!");
+            $player->sendMessage("§e> Break the join sign.");
+            $event->setCancelled();
+        } else if(self::$setup[$player->getName()]["phase"] == 9) {
+            $a = $event->getBlock()->asPosition();
+            self::$setup[$player->getName()]["joinSign"] = $a;
+            self::$setup[$player->getName()]["phase"] = 10;
+            $player->sendMessage("§a> Join sign set to §bX: ".$a->x.", Y: ".$a->y.", Z: ".$a->z."§a!");
             $player->sendMessage("§e> Do you want to create arena? (yes, no)");
+            $event->setCancelled();
         }
     }
 
